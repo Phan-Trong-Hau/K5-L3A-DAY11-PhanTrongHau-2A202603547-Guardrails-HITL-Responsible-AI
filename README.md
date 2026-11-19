@@ -1,3 +1,55 @@
+# Bài làm — Phan Trọng Hậu · 2A202603547 · K5-L3A
+
+Đã triển khai CP2–4: input/output guardrails, sliding-window rate limit theo user,
+audit che dữ liệu nhạy cảm, monitoring, pipeline Blue và 5 prompt red-team cho
+ngữ cảnh bàn giao vận hành VinBank. Audit/monitoring là observer của suite;
+egress là policy riêng trước sink. Các prompt CP4 là từng lượt độc lập.
+
+Cấu hình hiện tại dùng Liquid cloud `lfm3-1.7b` qua API tương thích OpenAI.
+Tạo `.env` (không commit) với:
+
+```dotenv
+LAB_RUNTIME=liquid
+LIQUID_BASE_URL=https://api.liquid.ai/openai/v1
+LIQUID_MODEL=lfm3-1.7b
+LIQUID_API_KEY=your-liquid-key
+```
+
+Blue, Red và NeMo self-check cùng dùng Liquid. JSON ghi provider `liquid` và
+model thực tế. Đây là cấu hình theo yêu cầu cá nhân, khác provider/model cloud
+trong rubric; chưa chứng minh điều kiện leak Red trên model mặc định.
+Đặt `LAB_RUNTIME=cloud` để dùng cấu hình chấm gốc. Ollama vẫn được hỗ trợ qua
+`LAB_RUNTIME=local`, `LOCAL_MODEL=qwen3:4b-instruct`,
+`LOCAL_BASE_URL=http://localhost:11434/v1`, `LOCAL_API_KEY=ollama`.
+
+Chạy từ gốc repo:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Điền cấu hình Liquid ở trên.
+python src/main.py --part 2  # Không cần API key
+python src/main.py --part 3  # Blue thật → results/audit/metrics
+python src/main.py --part 4  # Red + Red Advance thật → attack_results
+pytest tests/smoke tests/public -q
+python scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
+
+CP3 gọi model Blue thật cho câu hợp lệ; load test đi qua toàn pipeline với cùng
+user, request vượt hạn bị chặn trước model. Lỗi provider được ghi audit và dừng suite, không giả phản hồi.
+CP4 chỉ đánh dấu leak từ phản hồi thực tế, không bảo đảm mọi prompt thành công.
+Các artifact sinh từ lần chạy thực tế bằng local hoặc cloud; không có JSON mẫu
+để thay thế bằng chứng. Judge tùy chọn chưa cấu hình; regex không đánh giá hallucination.
+Kết quả mới nhất nằm trong `outputs/results.json` và
+`outputs/attack_results.json`. Báo cáo `outputs/lab_report.md` do grader sinh.
+Các prompt bị chặn ở regex không đi tiếp vào NeMo. Bộ kiểm thử smoke/public
+được chạy lại sau thay đổi cấu hình; API key thật chỉ lưu trong `.env`.
+Học viên cần đọc, chạy và điều chỉnh prompt theo RULES.md trước khi nộp.
+
+---
+
 # Day 11 — Controlled Agent Security (2026)
 
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  

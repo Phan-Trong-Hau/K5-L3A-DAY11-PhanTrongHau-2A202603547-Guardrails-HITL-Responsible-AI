@@ -24,7 +24,6 @@ _SRC_DIR = Path(__file__).resolve().parent
 if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
-from core.config import setup_api_key
 
 
 async def part2_guardrails():
@@ -134,10 +133,25 @@ async def part4_attacks():
 
 
 async def main(parts=None):
-    setup_api_key()
-
     if parts is None:
         parts = [2, 3, 4]  # Core: CP2 → CP3 → CP4
+
+    if 3 in parts or 4 in parts:
+        from core.config import get_openrouter_api_key, get_openai_api_key, get_red_provider
+        import os
+        missing = []
+        from core.config import use_liquid_model
+        if use_liquid_model() and not os.getenv("LIQUID_API_KEY"):
+            missing.append("LIQUID_API_KEY")
+        if 3 in parts and not get_openrouter_api_key():
+            missing.append("OPENROUTER_API_KEY")
+        if 4 in parts:
+            if get_red_provider() == "openai" and not get_openai_api_key():
+                missing.append("OPENAI_API_KEY")
+            elif get_red_provider() == "gemini" and not os.getenv("GOOGLE_API_KEY"):
+                missing.append("GOOGLE_API_KEY")
+        if missing:
+            raise RuntimeError("Điền key trong .env: " + ", ".join(missing))
 
     for part in parts:
         if part == 2:

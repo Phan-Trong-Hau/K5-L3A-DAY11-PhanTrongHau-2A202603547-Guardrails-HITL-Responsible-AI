@@ -29,6 +29,32 @@ try:
 except ImportError:
     pass
 
+def use_liquid_model() -> bool:
+    return os.getenv("LAB_RUNTIME", "cloud").strip().lower() == "liquid"
+
+
+def liquid_model() -> str:
+    return os.getenv("LIQUID_MODEL", "lfm3-1.7b").strip()
+
+
+def liquid_client_kwargs() -> dict:
+    return {"base_url": os.getenv("LIQUID_BASE_URL", "https://api.liquid.ai/openai/v1"),
+            "api_key": os.getenv("LIQUID_API_KEY", "").strip() or None}
+
+
+def use_local_model() -> bool:
+    return os.getenv("LAB_RUNTIME", "cloud").strip().lower() == "local"
+
+
+def local_model() -> str:
+    return os.getenv("LOCAL_MODEL", "qwen3:4b-instruct").strip()
+
+
+def local_client_kwargs() -> dict:
+    return {"base_url": os.getenv("LOCAL_BASE_URL", "http://localhost:11434/v1"),
+            "api_key": os.getenv("LOCAL_API_KEY", "ollama")}
+
+
 # --- Providers ---
 PROVIDER_OPENAI = "openai"
 PROVIDER_GEMINI = "gemini"
@@ -100,20 +126,26 @@ except FileNotFoundError:
 # ---------------------------------------------------------------------------
 
 def get_blue_provider() -> str:
-    return BLUE_PROVIDER
+    return "liquid" if use_liquid_model() else "local" if use_local_model() else BLUE_PROVIDER
 
 
 def get_blue_model() -> str:
     # Hard-locked; env cannot override for the graded Blue Team path.
-    return BLUE_MODEL
+    return liquid_model() if use_liquid_model() else local_model() if use_local_model() else BLUE_MODEL
 
 
 def get_openrouter_api_key() -> str:
-    return os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if use_liquid_model():
+        return os.getenv("LIQUID_API_KEY", "").strip()
+    return "ollama" if use_local_model() else os.environ.get("OPENROUTER_API_KEY", "").strip()
 
 
 def blue_client_kwargs() -> dict:
     """OpenAI SDK kwargs pointing at OpenRouter (Blue Team only)."""
+    if use_liquid_model():
+        return liquid_client_kwargs()
+    if use_local_model():
+        return local_client_kwargs()
     return {
         "api_key": get_openrouter_api_key() or None,
         "base_url": (
@@ -132,6 +164,10 @@ def blue_provider_label() -> str:
 # ---------------------------------------------------------------------------
 
 def get_red_provider() -> str:
+    if use_liquid_model():
+        return "liquid"
+    if use_local_model():
+        return "local"
     raw = (
         os.environ.get("RED_TEAM_PROVIDER")
         or os.environ.get("LLM_PROVIDER")
@@ -144,6 +180,10 @@ def get_red_provider() -> str:
 
 def get_red_model() -> str:
     """Model Red Team từ .env (cùng cho default + advance)."""
+    if use_liquid_model():
+        return liquid_model()
+    if use_local_model():
+        return local_model()
     if get_red_provider() == PROVIDER_GEMINI:
         return (
             os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip()
@@ -170,7 +210,9 @@ def get_openai_api_key() -> str:
 
 
 def red_openai_client_kwargs() -> dict:
-    return {"api_key": get_openai_api_key() or None}
+    if use_liquid_model():
+        return liquid_client_kwargs()
+    return local_client_kwargs() if use_local_model() else {"api_key": get_openai_api_key() or None}
 
 
 def red_provider_label(tier: str = "advance") -> str:
@@ -180,7 +222,7 @@ def red_provider_label(tier: str = "advance") -> str:
 
 
 def red_uses_openai_sdk() -> bool:
-    return get_red_provider() == PROVIDER_OPENAI
+    return get_red_provider() in {PROVIDER_OPENAI, "local", "liquid"}
 
 
 def red_uses_gemini() -> bool:

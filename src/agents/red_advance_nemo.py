@@ -229,6 +229,14 @@ def require_nemo():
 
 
 def _model_entry(provider: str, model: str) -> dict:
+    if provider == "liquid":
+        from core.config import liquid_client_kwargs
+        return {"type": "main", "engine": "openai", "model": model,
+                "parameters": liquid_client_kwargs()}
+    if provider == "local":
+        from core.config import local_client_kwargs
+        return {"type": "main", "engine": "openai", "model": model,
+                "parameters": local_client_kwargs()}
     if provider == PROVIDER_GEMINI:
         return {
             "type": "main",
