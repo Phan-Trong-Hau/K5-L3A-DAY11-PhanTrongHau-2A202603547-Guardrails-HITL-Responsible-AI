@@ -48,6 +48,24 @@ Các prompt bị chặn ở regex không đi tiếp vào NeMo. Bộ kiểm thử
 được chạy lại sau thay đổi cấu hình; API key thật chỉ lưu trong `.env`.
 Học viên cần đọc, chạy và điều chỉnh prompt theo RULES.md trước khi nộp.
 
+## Rà soát, demo và bonus
+
+Checklist đối chiếu yêu cầu: [`REVIEW.md`](REVIEW.md).
+Demo terminal Blue/Red/Red Advance và history SQLite đã che secret/PII:
+[`demo/README.md`](demo/README.md).
+
+```bash
+python src/demo_app.py --target blue
+python src/demo_app.py --history
+python scripts/verify_demo.py
+pytest tests/smoke tests/public tests/demo -q  # 67 passed
+```
+
+Replay B1 đã tái hiện leak 4/4 lượt trên Liquid; B2 thử lại 5 prompt vẫn 0/5 leak.
+Bằng chứng: `outputs/bonus_b1_replay.json`, `outputs/bonus_b2_replay.json`.
+Đề nghị chọn B1; bonus vẫn chờ coach/grader replay, chưa tự cấp điểm.
+Cấu hình Liquid hiện chưa chứng minh điều kiện model mặc định của rubric.
+
 ---
 
 # Day 11 — Controlled Agent Security (2026)

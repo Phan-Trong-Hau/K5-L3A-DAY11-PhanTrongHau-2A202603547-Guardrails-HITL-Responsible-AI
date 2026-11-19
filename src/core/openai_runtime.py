@@ -43,7 +43,7 @@ class OpenAIRunner:
     provider: str = "openai"
     temperature: float = 0.4
     user_id: str = "student"
-    client_kwargs: dict = field(default_factory=dict)
+    client_kwargs: dict = field(default_factory=dict, repr=False)
     input_hooks: list[Callable[[str], str | None]] = field(default_factory=list)
     output_hooks: list[Callable[[str], str]] = field(default_factory=list)
 
